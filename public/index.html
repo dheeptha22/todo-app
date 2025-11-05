@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>To-Do App</title>
+  <style>
+    body { font-family: Arial; max-width: 500px; margin: auto; }
+    ul { list-style: none; padding: 0; }
+    li { padding: 5px 0; cursor: pointer; }
+    .done { text-decoration: line-through; color: gray; }
+  </style>
+</head>
+<body>
+  <h1>To-Do List</h1>
+  <input type="text" id="task" placeholder="Add task">
+  <button onclick="addTask()">Add</button>
+  <ul id="list"></ul>
+
+  <script>
+    async function fetchTodos() {
+      const res = await fetch("/todos");
+      const todos = await res.json();
+      const list = document.getElementById("list");
+      list.innerHTML = "";
+      todos.forEach(t => {
+        const li = document.createElement("li");
+        li.textContent = t.task;
+        li.className = t.done ? "done" : "";
+        
+        li.onclick = async () => {
+          await fetch(`/todos/${t.id}`, { method: "PUT" });
+          fetchTodos();
+        };
+        
+        li.oncontextmenu = async (e) => {
+          e.preventDefault();
+          await fetch(`/todos/${t.id}`, { method: "DELETE" });
+          fetchTodos();
+        };
+        
+        list.appendChild(li);
+      });
+    }
+
+    async function addTask() {
+      const task = document.getElementById("task").value;
+      if(!task) return;
+      await fetch("/todos", { 
+        method: "POST", 
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ task })
+      });
+      document.getElementById("task").value = "";
+      fetchTodos();
+    }
+
+    fetchTodos();
+  </script>
+</body>
+</html>
